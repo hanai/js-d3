@@ -1,0 +1,93 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>3D</title>
+  <script src="../dist/d3.js"></script>
+</head>
+<body>
+<canvas id="scene" width="800" height="600"></canvas>
+<script>
+  var pixelRatio = window.devicePixelRatio ? window.devicePixelRatio : 1;
+
+  var canvas = document.getElementById('scene');
+
+  var dx = canvas.width / 2;
+  var dy = canvas.height / 2;
+
+  var ctx = canvas.getContext('2d');
+  ctx.strokeStyle = 'rgba(0, 0, 0, 0.3)';
+  ctx.fillStyle = 'rgba(0, 150, 255, 0.3)';
+
+  var cubeCenter = new d3.Vertex(0, 11 * dy / 10, 0);
+  var cube = new d3.Cube(cubeCenter, dy);
+  var objects = [cube];
+
+  d3.render(objects, ctx, dx, dy);
+
+  var mousedown = false;
+  var mx = 0;
+  var my = 0;
+
+  canvas.addEventListener('mousedown', initMove);
+  document.addEventListener('mousemove', move);
+  document.addEventListener('mouseup', stopMove);
+
+  // Rotate a vertex
+  function rotate(M, center, theta, phi) {
+    // Rotation matrix coefficients
+    var ct = Math.cos(theta);
+    var st = Math.sin(theta);
+    var cp = Math.cos(phi);
+    var sp = Math.sin(phi);
+
+    // Rotation
+    var x = M.x - center.x;
+    var y = M.y - center.y;
+    var z = M.z - center.z;
+
+    M.x = ct * x - st * cp * y + st * sp * z + center.x;
+    M.y = st * x + ct * cp * y - ct * sp * z + center.y;
+    M.z = sp * y + cp * z + center.z;
+  }
+
+  // Initialize the movement
+  function initMove(evt) {
+    clearTimeout(autorotate_timeout);
+    mousedown = true;
+    mx = evt.clientX;
+    my = evt.clientY;
+  }
+
+  function move(evt) {
+    if (mousedown) {
+      var theta = (evt.clientX - mx) * Math.PI / 360;
+      var phi = (evt.clientY - my) * Math.PI / 180;
+
+      for (var i = 0; i < 8; ++i)
+        rotate(cube.vertices[i], cubeCenter, theta, phi);
+
+      mx = evt.clientX;
+      my = evt.clientY;
+
+      d3.render(objects, ctx, dx, dy);
+    }
+  }
+
+  function stopMove() {
+    mousedown = false;
+    autorotate_timeout = setTimeout(autorotate, 2000);
+  }
+
+  function autorotate() {
+    for (var i = 0; i < 8; ++i)
+      rotate(cube.vertices[i], cubeCenter, -Math.PI / 720, Math.PI / 720);
+
+    d3.render(objects, ctx, dx, dy);
+
+    autorotate_timeout = setTimeout(autorotate, 30);
+  }
+  autorotate_timeout = setTimeout(autorotate, 2000);
+</script>
+</body>
+</html>
